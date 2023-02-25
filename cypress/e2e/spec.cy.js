@@ -2,8 +2,10 @@
 
 // https://github.com/bahmutov/cypress-map
 import 'cypress-map'
+// https://github.com/bahmutov/cy-spok
+import spok from 'cy-spok'
 
-it.only('fetches 10 random US cities', () => {
+it('fetches 10 random US cities', () => {
   cy.visit('/wiki/List_of_United_States_cities_by_population')
   cy.get('table.wikitable.sortable')
     .should('have.length.gte', 1)
@@ -52,35 +54,69 @@ it('fetches weather and renders ASCII html', () => {
     })
 })
 
-it.only('fetches weather until we find a comfortable city', () => {
-  const getForecast = (cities) => {
-    if (cities.length < 1) {
-      cy.log('No more cities to check')
-      return
-    }
-    cy.print(`${cities.length} cities remaining`)
-    // always check the first city
-    // and remove it from the remaining list
-    const cityName = cities.pop()
-    cy.request(`https://wttr.in/${cityName}?format=j1`)
-      .its('body')
-      // cy.tap() comes from cypress-map
-      // and by default prints the current subject using console.log
-      .tap()
-      .its('weather.0.avgtempC')
-      .print(`${cityName} average tomorrow is %dC`)
-      .then((temperature) => {
-        if (temperature >= 17 && temperature <= 20) {
-          cy.log(`People in ${cityName} are luck`)
-        } else {
-          // call the weather check again
-          // with the shorter list of cities to check
-          getForecast(cities)
-        }
-      })
+const getForecast = (cities) => {
+  if (cities.length < 1) {
+    cy.log('No more cities to check')
+    return
   }
+  cy.print(`${cities.length} cities remaining`)
+  // always check the last city
+  // and remove it from the remaining list
+  const cityName = cities.pop()
+  cy.request(`https://wttr.in/${cityName}?format=j1`)
+    .its('body')
+    // cy.tap() comes from cypress-map
+    // and by default prints the current subject using console.log
+    .tap()
+    .its('weather.0.avgtempC')
+    .then(Number)
+    .should('be.within', -30, 50)
+    .print(`${cityName} average tomorrow is %dC`)
+    .then((temperature) => {
+      if (temperature >= 17 && temperature <= 20) {
+        cy.log(`People in ${cityName} are luck`)
+      } else {
+        // call the weather check again
+        // with the shorter list of cities to check
+        getForecast(cities)
+      }
+    })
+}
 
+it('fetches weather until we find a comfortable city', () => {
   cy.readFile('cities.json')
     // kick off the search
     .then(getForecast)
+})
+
+it('fetches forecast', () => {
+  cy.fixture('two.json') // kick off the search
+    .then(getForecast)
+})
+
+it('validates wttr.in response', () => {
+  // numbers returned by wttr.in are strings
+  const temperature = /^\-?\d+$/
+  cy.request('https://wttr.in/Boston?format=j1')
+    .its('body')
+    .should(
+      spok({
+        current_condition: [
+          {
+            temp_C: spok.test(temperature),
+            temp_F: spok.test(temperature),
+          },
+        ],
+        weather: [
+          {
+            $topic: 'today',
+            avgtempC: spok.test(temperature),
+          },
+          {
+            $topic: 'tomorrow',
+            avgtempC: spok.test(temperature),
+          },
+        ],
+      }),
+    )
 })
