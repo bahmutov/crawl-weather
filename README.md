@@ -2,7 +2,7 @@
 
 > Companion code to the blog post about crawling weather forecasts using Cypress
 
-📝 Read the blog post [Crawl Weather Using Cypress]()
+📝 Read the blog post [Crawl Weather Using Cypress](https://glebbahmutov.com/blog/crawl-weather/)
 
 ## Small print
 
