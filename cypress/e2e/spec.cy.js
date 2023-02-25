@@ -5,6 +5,9 @@ import 'cypress-map'
 // https://github.com/bahmutov/cy-spok
 import spok from 'cy-spok'
 
+// https://github.com/bahmutov/cypress-recurse
+import { recurse } from 'cypress-recurse'
+
 it('fetches 10 random US cities', () => {
   cy.visit('/wiki/List_of_United_States_cities_by_population')
   cy.get('table.wikitable.sortable')
@@ -74,7 +77,7 @@ const getForecast = (cities) => {
     .print(`${cityName} average tomorrow is %dC`)
     .then((temperature) => {
       if (temperature >= 17 && temperature <= 20) {
-        cy.log(`People in ${cityName} are luck`)
+        cy.log(`People in ${cityName} are lucky`)
       } else {
         // call the weather check again
         // with the shorter list of cities to check
@@ -119,4 +122,34 @@ it('validates wttr.in response', () => {
         ],
       }),
     )
+})
+
+it('finds the city with comfortable weather using cypress-recurse', () => {
+  cy.readFile('cities.json').then((cities) => {
+    // always check the last city
+    // and remove it from the remaining list
+    let cityName = cities.pop()
+    recurse(
+      () =>
+        cy
+          .request(`https://wttr.in/${cityName}?format=j1`)
+          .its('body.weather.0.avgtempC')
+          .then(Number)
+          .should('be.within', -30, 50)
+          .print(`${cityName} average tomorrow is %dC`),
+      (temperature) => temperature >= 17 && temperature <= 20,
+      {
+        log(temperature, { successful }) {
+          if (successful) {
+            cy.log(`People in ${cityName} are lucky`)
+          }
+        },
+        limit: cities.length,
+        timeout: 10_000,
+        post() {
+          cityName = cities.pop()
+        },
+      },
+    )
+  })
 })
