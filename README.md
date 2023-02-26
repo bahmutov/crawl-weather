@@ -4,6 +4,13 @@
 
 📝 Read the blog post [Crawl Weather Using Cypress](https://glebbahmutov.com/blog/crawl-weather/)
 
+Shows the following plugins in action:
+
+- [cypress-map](https://github.com/bahmutov/cypress-map)
+- [cy-spok](https://github.com/bahmutov/cy-spok)
+- [cypress-recurse](https://github.com/bahmutov/cypress-recurse)
+- [cypress-data-session](https://github.com/bahmutov/cypress-data-session)
+
 ## Small print
 
 Author: Gleb Bahmutov &lt;gleb.bahmutov@gmail.com&gt; &copy; 2023
